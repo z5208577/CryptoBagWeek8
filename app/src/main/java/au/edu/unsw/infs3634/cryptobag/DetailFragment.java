@@ -102,7 +102,7 @@ public class DetailFragment extends Fragment {
                 Response<CoinLoreResponse> coinsResponse = coinsCall.execute();
                 List<Coin> coins = coinsResponse.body().getData();
                 for(Coin coin : coins){
-                    if(coin.getName().equals(getArguments().getString(ARG_ITEM_ID))){
+                    if(coin.getSymbol().equals(itemID)){
                         mCoin = coin;
                     }
                 }
