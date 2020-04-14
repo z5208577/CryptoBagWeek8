@@ -1,7 +1,9 @@
 package au.edu.unsw.infs3634.cryptobag;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Adapter;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,38 +37,64 @@ public class MainActivity extends AppCompatActivity {
             mTwoPane = true;
         }
 
-        RecyclerView mRecyclerView = findViewById(R.id.rvList);
-        mRecyclerView.setHasFixedSize(true);
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLayoutManager);
+       myTask asyncTask = new myTask(this);
+        asyncTask.execute();
 
-        RecyclerView.Adapter mAdapter = new CoinAdapter(this, new ArrayList<Coin>(), mTwoPane);
-        mRecyclerView.setAdapter(mAdapter);
+    }
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.coinlore.net/api/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+    public class myTask extends AsyncTask<Void,Void, RecyclerView.Adapter > {
+        public MainActivity activity;
+        public myTask(MainActivity mainActivity) {
+            this.activity = mainActivity;
+        }
 
-        CoinService service = retrofit.create(CoinService.class);
-        Call<CoinLoreResponse> coinsCall = service.getCoins();
-        coinsCall.enqueue(new Callback<CoinLoreResponse>() {
-            @Override
-            public void onResponse(Call<CoinLoreResponse> call, Response<CoinLoreResponse> response) {
-                if(response.isSuccessful()){
-                    Log.d(TAG, "onResponse ");
-                    List<Coin> coins = response.body().getData();
-                    ((CoinAdapter)mAdapter).setCoins(coins);
-                } else {
-                    Log.d(TAG,"Error");
-                }
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+        }
+
+        @Override
+        protected RecyclerView.Adapter  doInBackground(Void... voids) {
+
+            RecyclerView.Adapter mAdapter = new CoinAdapter(activity, new ArrayList<Coin>(), mTwoPane);
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl("https://api.coinlore.net/api/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            CoinService service = retrofit.create(CoinService.class);
+            Call<CoinLoreResponse> coinsCall = service.getCoins();
+            Response<CoinLoreResponse> coinsResponse= null;
+            try {
+                coinsResponse = coinsCall.execute();
+                List<Coin> coins = coinsResponse.body().getData();
+                ((CoinAdapter)mAdapter).setCoins(coins);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            return mAdapter;
+        }
 
-            @Override
-            public void onFailure(Call<CoinLoreResponse> call, Throwable t) {
-                Log.d(TAG,"Failure");
-            }
-        });
+        @Override
+        protected void onPostExecute(RecyclerView.Adapter adapter) {
+            super.onPostExecute(adapter);
+            RecyclerView mRecyclerView = findViewById(R.id.rvList);
+            mRecyclerView.setHasFixedSize(true);
+            RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(activity);
+            mRecyclerView.setLayoutManager(mLayoutManager);
 
+            mRecyclerView.setAdapter(adapter);
+
+        }
+
+        @Override
+        protected void onCancelled(RecyclerView.Adapter  mAdapter) {
+            super.onCancelled(mAdapter);
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+        }
     }
 }

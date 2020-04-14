@@ -2,6 +2,7 @@ package au.edu.unsw.infs3634.cryptobag;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,7 +12,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.List;
 
@@ -34,33 +37,8 @@ public class DetailFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if(getArguments().containsKey(ARG_ITEM_ID)) {
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl("https://api.coinlore.net/api/")
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
-
-            CoinService service = retrofit.create(CoinService.class);
-            Call<CoinLoreResponse> coinsCall = service.getCoins();
-            coinsCall.enqueue(new Callback<CoinLoreResponse>() {
-                @Override
-                public void onResponse(Call<CoinLoreResponse> call, Response<CoinLoreResponse> response) {
-                    Log.d(TAG, "onResponse ");
-                    List<Coin> coins = response.body().getData();
-                    for(Coin coin : coins){
-                        if(coin.getName().equals(getArguments().getString(ARG_ITEM_ID))){
-                            mCoin = coin;
-                        }
-                    }
-                    updateUI();
-                }
-
-                @Override
-                public void onFailure(Call<CoinLoreResponse> call, Throwable t) {
-                    Log.d(TAG,"Failure" + t.getMessage());
-                    t.printStackTrace();
-
-                }
-            });
+            myTask asyncTask = new myTask(getArguments().getString(ARG_ITEM_ID));
+            asyncTask.execute();
 
         }
     }
@@ -98,4 +76,43 @@ public class DetailFragment extends Fragment {
             });
         }
     }
+
+    public class myTask extends AsyncTask<Void,Void, Coin > {
+        String itemID;
+
+        public myTask(String itemID){
+            this.itemID = itemID;
+        }
+        @Override
+        protected void onPostExecute(Coin coin) {
+            super.onPostExecute(coin);
+            updateUI();
+        }
+
+        @Override
+        protected Coin doInBackground(Void... voids) {
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl("https://api.coinlore.net/api/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            CoinService service = retrofit.create(CoinService.class);
+            Call<CoinLoreResponse> coinsCall = service.getCoins();
+            try {
+                Response<CoinLoreResponse> coinsResponse = coinsCall.execute();
+                List<Coin> coins = coinsResponse.body().getData();
+                for(Coin coin : coins){
+                    if(coin.getName().equals(getArguments().getString(ARG_ITEM_ID))){
+                        mCoin = coin;
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+    }
+
 }
