@@ -4,14 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
+
+import androidx.annotation.NonNull;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import au.edu.unsw.infs3634.cryptobag.MainActivity;
 
-
+@Entity
 public class Coin {
-
+    @PrimaryKey(autoGenerate = true)
+    private int uid;
     @SerializedName("id")
     @Expose
     private String id;
@@ -61,6 +67,13 @@ public class Coin {
     @Expose
     private String msupply;
 
+    public int getUid() {
+        return uid;
+    }
+
+    public void setUid(int uid) {
+        this.uid = uid;
+    }
 
     public String getId() {
         return id;

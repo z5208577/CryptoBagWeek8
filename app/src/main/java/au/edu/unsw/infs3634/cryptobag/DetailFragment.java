@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
 
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -29,6 +30,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class DetailFragment extends Fragment {
     public static final String ARG_ITEM_ID = "item_id";
     public String TAG;
+    private CoinDatabase mCoinDatabase;
     private Coin mCoin;
 
     public DetailFragment() {}
@@ -36,8 +38,13 @@ public class DetailFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mCoinDatabase = Room.databaseBuilder(getActivity().getApplicationContext(),CoinDatabase.class,"myDB")
+                .build();
+        mCoinDatabase.coinDao();
+
+
         if(getArguments().containsKey(ARG_ITEM_ID)) {
-            myTask asyncTask = new myTask(getArguments().getString(ARG_ITEM_ID));
+            myTask asyncTask = new myTask(getArguments().getString(ARG_ITEM_ID),mCoinDatabase);
             asyncTask.execute();
 
         }
@@ -79,9 +86,11 @@ public class DetailFragment extends Fragment {
 
     public class myTask extends AsyncTask<Void,Void, Coin > {
         String itemID;
+        CoinDatabase mCoinDatabase;
 
-        public myTask(String itemID){
+        public myTask(String itemID, CoinDatabase mCoinDatabase){
             this.itemID = itemID;
+            this.mCoinDatabase = mCoinDatabase;
         }
         @Override
         protected void onPostExecute(Coin coin) {
@@ -91,6 +100,7 @@ public class DetailFragment extends Fragment {
 
         @Override
         protected Coin doInBackground(Void... voids) {
+            //unable to pass Database object from main so will repopulate 
             Retrofit retrofit = new Retrofit.Builder()
                     .baseUrl("https://api.coinlore.net/api/")
                     .addConverterFactory(GsonConverterFactory.create())
@@ -98,20 +108,18 @@ public class DetailFragment extends Fragment {
 
             CoinService service = retrofit.create(CoinService.class);
             Call<CoinLoreResponse> coinsCall = service.getCoins();
+            Response<CoinLoreResponse> coinsResponse= null;
             try {
-                Response<CoinLoreResponse> coinsResponse = coinsCall.execute();
+                coinsResponse = coinsCall.execute();
                 List<Coin> coins = coinsResponse.body().getData();
-                for(Coin coin : coins){
-                    if(coin.getSymbol().equals(itemID)){
-                        mCoin = coin;
-                    }
-                }
-
+                Coin[] coinList = coins.toArray(new Coin[coins.size()]);
+                mCoinDatabase.coinDao().insertCoins(coinList);
+                mCoin = mCoinDatabase.coinDao().searchCoin(itemID).get(0);
+                //populate database
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            return null;
+            return mCoin;
         }
     }
 
