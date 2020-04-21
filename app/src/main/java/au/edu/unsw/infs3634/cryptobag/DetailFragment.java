@@ -100,25 +100,26 @@ public class DetailFragment extends Fragment {
 
         @Override
         protected Coin doInBackground(Void... voids) {
-            //unable to pass Database object from main so will repopulate 
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl("https://api.coinlore.net/api/")
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
-
-            CoinService service = retrofit.create(CoinService.class);
-            Call<CoinLoreResponse> coinsCall = service.getCoins();
-            Response<CoinLoreResponse> coinsResponse= null;
-            try {
-                coinsResponse = coinsCall.execute();
-                List<Coin> coins = coinsResponse.body().getData();
-                Coin[] coinList = coins.toArray(new Coin[coins.size()]);
-                mCoinDatabase.coinDao().insertCoins(coinList);
-                mCoin = mCoinDatabase.coinDao().searchCoin(itemID).get(0);
-                //populate database
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            mCoin = mCoinDatabase.coinDao().searchCoin(itemID).get(0);
+            //unable to pass Database object from main so will repopulate
+            //Retrofit retrofit = new Retrofit.Builder()
+            //        .baseUrl("https://api.coinlore.net/api/")
+            //        .addConverterFactory(GsonConverterFactory.create())
+            //        .build();
+//
+            //CoinService service = retrofit.create(CoinService.class);
+            //Call<CoinLoreResponse> coinsCall = service.getCoins();
+            //Response<CoinLoreResponse> coinsResponse= null;
+            //try {
+            //    coinsResponse = coinsCall.execute();
+            //    List<Coin> coins = coinsResponse.body().getData();
+            //    Coin[] coinList = coins.toArray(new Coin[coins.size()]);
+            //    mCoinDatabase.coinDao().insertCoins(coinList);
+            //    mCoin = mCoinDatabase.coinDao().searchCoin(itemID).get(0);
+            //    //populate database
+            //} catch (IOException e) {
+            //    e.printStackTrace();
+            //}
             return mCoin;
         }
     }

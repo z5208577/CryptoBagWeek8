@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected CoinDatabase  doInBackground(Void... voids) {
-
+            coinDatabase.coinDao().clearCoins();
             RecyclerView.Adapter mAdapter = new CoinAdapter(activity, new ArrayList<Coin>(), mTwoPane);
             Retrofit retrofit = new Retrofit.Builder()
                     .baseUrl("https://api.coinlore.net/api/")
